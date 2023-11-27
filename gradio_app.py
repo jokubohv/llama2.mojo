@@ -43,7 +43,7 @@ demo = gr.Interface(
     fn=generate,
     inputs=[
         gr.Textbox(label="Prompt"),
-        gr.Dropdown(["tl-chat.bin"], label="Model Size"),
+        gr.Dropdown(["tl-chat.bin"], label="Model Size", value="tl-chat.bin"),
         gr.Slider(minimum=0, maximum=2**53, value=0, step=1, label="Seed", randomize=True),
         gr.Slider(minimum=0.0, maximum=2.0, step=0.01, value=0.0, label="Temperature"),
         gr.Slider(minimum=1, maximum=500, value=256, label="Number of tokens")
