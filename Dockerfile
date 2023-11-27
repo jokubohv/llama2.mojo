@@ -64,8 +64,8 @@ WORKDIR $HOME/app
 
 # Copy application files and download necessary data
 COPY --chown=user . $HOME/app
-# RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tok_tl-chat.bin
-# RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tl-chat.bin
+RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tok_tl-chat.bin
+RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tl-chat.bin
 
 
 # Default command to run
