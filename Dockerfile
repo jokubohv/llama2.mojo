@@ -41,7 +41,10 @@ RUN apt-get install -y apt-transport-https && \
 
 RUN modular auth mut_d38276403cbb458c9edd95687b55e4dd && \
     modular install mojo
-  
+
+RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tok_tl-chat.bin
+RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tl-chat.bin
+
 # Add a new user and set the owner of the MODULAR_HOME
 RUN useradd -m -u 1000 user \
     && mkdir -p $MODULAR_HOME \
@@ -64,9 +67,6 @@ WORKDIR $HOME/app
 
 # Copy application files and download necessary data
 COPY --chown=user . $HOME/app
-RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tok_tl-chat.bin
-RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tl-chat.bin
-
 
 # Default command to run
 CMD ["python3.10", "gradio_app.py"]
