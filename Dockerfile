@@ -1,60 +1,56 @@
-# https://github.com/modularml/mojo/blob/main/examples/docker/Dockerfile.mojosdk
-# ===----------------------------------------------------------------------=== #
-# Copyright (c) 2023, Modular Inc. All rights reserved.
-#
-# Licensed under the Apache License v2.0 with LLVM Exceptions:
-# https://llvm.org/LICENSE.txt
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===----------------------------------------------------------------------=== #
-
-# Example command line:
-# Use no-cache to force docker to rebuild layers of the image by downloading the SDK from the repos
-# docker build --no-cache \
-#    --build-arg AUTH_KEY=<your-modular-auth-key>
-#    --pull -t modular/mojo-v0.2-`date '+%Y%d%m-%H%M'` \
-#    --file Dockerfile.mojosdk .
-
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ARG DEFAULT_TZ=America/Los_Angeles
 ENV DEFAULT_TZ=$DEFAULT_TZ
 ARG MODULAR_HOME=/home/user/.modular
 ENV MODULAR_HOME=$MODULAR_HOME
 
+# Update the package list and install Python 3.10 and other necessary packages
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive TZ=$DEFAULT_TZ apt-get install -y \
-    tzdata \
-    vim \
-    sudo \
-    curl \ 
-    python3 \
-    pip \
-    wget
+       tzdata \
+       vim \
+       sudo \
+       curl \
+       python3.10 \
+       python3.10-venv \
+       python3.10-distutils \
+       wget \
+       gnupg \
+       apt-transport-https \
+       libedit2
 
-RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh > /tmp/miniconda.sh \
-    && chmod +x /tmp/miniconda.sh \
-    && /tmp/miniconda.sh -b -p /opt/conda
+# Create a virtual environment with Python 3.10
+ENV VENV_PATH=/home/user/venv
+RUN python3.10 -m venv $VENV_PATH
 
-ENV PATH=/opt/conda/bin:$PATH
-RUN conda init
+# Activate the virtual environment and upgrade pip
+ENV PATH="$VENV_PATH/bin:$PATH"
+RUN pip install --upgrade pip
 
 ARG AUTH_KEY=DEFAULT_KEY
 ENV AUTH_KEY=$AUTH_KEY
 
-RUN curl https://get.modular.com | MODULAR_AUTH=$AUTH_KEY sh -
-RUN modular auth $AUTH_KEY && \
-    modular install mojo 
+# Install the modular tool and authenticate
+RUN apt-get install -y apt-transport-https && \
+    keyring_location=/usr/share/keyrings/modular-installer-archive-keyring.gpg && \
+    curl -1sLf 'https://dl.modular.com/bBNWiLZX5igwHXeu/installer/gpg.0E4925737A3895AD.key' |  gpg --dearmor >> ${keyring_location} && \
+    curl -1sLf 'https://dl.modular.com/bBNWiLZX5igwHXeu/installer/config.deb.txt?distro=debian&codename=wheezy' > /etc/apt/sources.list.d/modular-installer.list && \
+    apt-get update && \
+    apt-get install -y modular 
 
-RUN useradd -m -u 1000 user
-RUN chown -R user $MODULAR_HOME
+RUN modular auth mut_d38276403cbb458c9edd95687b55e4dd && \
+    modular install mojo
+  
+# Add a new user and set the owner of the MODULAR_HOME
+RUN useradd -m -u 1000 user \
+    && mkdir -p $MODULAR_HOME \
+    && chown -R user:user $MODULAR_HOME
 
+# Set the additional PATH for modular tool
 ENV PATH="$MODULAR_HOME/pkg/packages.modular.com_mojo/bin:$PATH"
 
+# Install Python packages
 RUN pip install \
     jupyterlab \
     ipykernel \
@@ -62,13 +58,15 @@ RUN pip install \
     ipywidgets \
     gradio 
 
+# Set the non-root user and working directory
 USER user
 WORKDIR $HOME/app
 
+# Copy application files and download necessary data
 COPY --chown=user . $HOME/app
-RUN wget -c https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin
-RUN wget -c https://huggingface.co/karpathy/tinyllamas/resolve/main/stories42M.bin
-RUN wget -c https://huggingface.co/karpathy/tinyllamas/resolve/main/stories110M.bin
+# RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tok_tl-chat.bin
+# RUN wget -c  https://huggingface.co/kirp/TinyLlama-1.1B-Chat-v0.2-bin/resolve/main/tl-chat.bin
 
-# CMD ["mojo", "llama2.mojo"]
-CMD ["python3", "gradio_app.py"]
+
+# Default command to run
+CMD ["python3.10", "gradio_app.py"]
